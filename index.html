@@ -1,0 +1,149 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>睡眠打卡趨勢圖</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --bg: #FBF9F5;
+    --card-bg: #FFFFFF;
+    --text: #453F4D;
+    --text-muted: #9992A3;
+    --border: #EFE9F2;
+    --mint: #C8E6D8;
+    --mint-text: #2E6B4F;
+    --peach: #FBDCD1;
+    --peach-text: #A8503A;
+    --accent: #B8A6D9;
+    --holo-1: #B9C3EA;
+    --holo-2: #D6BEE0;
+    --holo-3: #F0BFD2;
+    --holo-4: #F8CBAE;
+    --holo-wash: linear-gradient(135deg, #EEF0FA 0%, #F6EEF6 35%, #FBEDF1 65%, #FCF1E8 100%);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #201C18;
+      --card-bg: #2B2620;
+      --text: #EDE6DB;
+      --text-muted: #948A7C;
+      --border: #3A342C;
+      --mint: #1F3B30;
+      --mint-text: #8FD9B6;
+      --peach: #3D2A24;
+      --peach-text: #F0A98F;
+      --accent: #9683C4;
+      --holo-1: #6B74B8;
+      --holo-2: #8A69A0;
+      --holo-3: #B8637E;
+      --holo-4: #C07F52;
+      --holo-wash: linear-gradient(135deg, #211F2E 0%, #251E29 35%, #281D22 65%, #241C18 100%);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding-block: 20px;
+    padding-inline: 16px;
+    background: var(--holo-wash), var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: -apple-system, "PingFang TC", "Noto Sans TC", sans-serif;
+    font-size: 14px;
+  }
+  [hidden] { display: none !important; }
+  .ribbon {
+    height: 6px;
+    max-width: 200px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--holo-1), var(--holo-2), var(--holo-3), var(--holo-4));
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 4px;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--holo-1), var(--holo-2) 35%, var(--holo-3) 65%, var(--holo-4));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: var(--text);
+    -webkit-text-fill-color: transparent;
+  }
+  h2 { font-size: 14px; color: var(--text-muted); margin: 0 0 10px; font-weight: 600; }
+  .updated-at { font-size: 12px; color: var(--text-muted); margin: 0 0 16px; }
+  .wrap { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(69,63,77,0.05), 0 6px 20px rgba(69,63,77,0.05);
+  }
+  .card--hero { position: relative; overflow: hidden; }
+  .card--hero::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--holo-1), var(--holo-2), var(--holo-3), var(--holo-4));
+  }
+  .stat-value, td { font-variant-numeric: tabular-nums; }
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .stat { display: flex; flex-direction: column; gap: 4px; }
+  .stat-label { font-size: 12px; color: var(--text-muted); }
+  .stat-value { font-size: 20px; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text-muted); font-weight: 600; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
+  .badge-mint { background: var(--mint); color: var(--mint-text); }
+  .badge-peach { background: var(--peach); color: var(--peach-text); }
+  .empty { color: var(--text-muted); font-size: 13px; padding: 24px 0; text-align: center; }
+  .table-scroll { overflow-x: auto; }
+  svg text { fill: var(--text-muted); font-size: 10px; }
+  .chart-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .chart-dot { fill: var(--accent); }
+  .chart-dot-invalid { fill: var(--peach-text); }
+  .chart-grid { stroke: var(--border); stroke-width: 1; }
+  .chart-target { stroke: var(--mint-text); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="ribbon"></div>
+  <h1>睡眠打卡趨勢圖</h1>
+  <div class="updated-at">資料更新時間:2026-09-16 17:59(本地資料,重新執行 generate_sleep_dashboard.py 可刷新)</div>
+
+  <div class="card card--hero">
+    <h2>總覽</h2>
+    <div class="overview-grid"><div class="stat"><div class="stat-label">已記錄晚數</div><div class="stat-value">3 晚</div></div><div class="stat"><div class="stat-label">平均睡眠時長</div><div class="stat-value">7.7 小時</div></div><div class="stat"><div class="stat-label">最新一晚</div><div class="stat-value">7.5 小時</div></div><div class="stat"><div class="stat-label">最新記錄日期</div><div class="stat-value">2026-09-13</div></div></div>
+  </div>
+
+  <div class="card">
+    <h2>每日睡眠時長趨勢</h2>
+    
+    <svg viewBox="0 0 760 220" style="width:100%; height:auto;">
+      <line class="chart-grid" x1="40" y1="192.0" x2="744" y2="192.0" /><text x="32" y="195.0" text-anchor="end">0h</text><line class="chart-grid" x1="40" y1="156.8" x2="744" y2="156.8" /><text x="32" y="159.8" text-anchor="end">2h</text><line class="chart-grid" x1="40" y1="121.6" x2="744" y2="121.6" /><text x="32" y="124.6" text-anchor="end">4h</text><line class="chart-grid" x1="40" y1="86.4" x2="744" y2="86.4" /><text x="32" y="89.4" text-anchor="end">6h</text><line class="chart-grid" x1="40" y1="51.2" x2="744" y2="51.2" /><text x="32" y="54.2" text-anchor="end">8h</text><line class="chart-grid" x1="40" y1="16.0" x2="744" y2="16.0" /><text x="32" y="19.0" text-anchor="end">10h</text>
+      <line class="chart-target" x1="40" y1="68.8" x2="744" y2="68.8" />
+      <path class="chart-line" d="M40.0,55.6 L392.0,55.6 L744.0,60.0" />
+      <circle class="chart-dot" cx="40.0" cy="55.6" r="3.5"><title>2026-09-11: 7.8 小時</title></circle><text x="40.0" y="212" text-anchor="middle">09-11</text><circle class="chart-dot" cx="392.0" cy="55.6" r="3.5"><title>2026-09-12: 7.8 小時</title></circle><text x="392.0" y="212" text-anchor="middle">09-12</text><circle class="chart-dot" cx="744.0" cy="60.0" r="3.5"><title>2026-09-13: 7.5 小時</title></circle><text x="744.0" y="212" text-anchor="middle">09-13</text>
+    </svg>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">虛線為 7 小時建議睡眠參考線</div>
+    
+  </div>
+
+  <div class="card">
+    <h2>打卡明細</h2>
+    <div class="table-scroll"><table><thead><tr><th>日期</th><th>入睡</th><th>起床</th><th>時長</th></tr></thead><tbody><tr><td>2026-09-13</td><td>09/13 01:00</td><td>09/13 08:30</td><td><span class="badge badge-mint">7.5 小時</span></td></tr><tr><td>2026-09-12</td><td>09/11 23:00</td><td>09/12 06:45</td><td><span class="badge badge-mint">7.8 小時</span></td></tr><tr><td>2026-09-11</td><td>09/10 23:30</td><td>09/11 07:15</td><td><span class="badge badge-mint">7.8 小時</span></td></tr></tbody></table></div>
+  </div>
+</div>
+</body>
+</html>
